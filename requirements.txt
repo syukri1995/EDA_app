@@ -1,8 +1,6 @@
 streamlit
-numpy
 pandas
+numpy
+matplotlib
 seaborn
-matplotlib.pyplot
-io
-re
-difflib
+openpyxl
