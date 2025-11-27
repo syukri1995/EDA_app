@@ -146,80 +146,107 @@ query = user_query.strip().lower()
 query_successful = False
 
 
-# --- TOP N PATTERN ---
-m = re.search(r"top\s*(\d*)\s*(\w+)?", query)
+# ===============================
+# 0. Utility − detect column name
+# ===============================
+def detect_column(text):
+    """Find best matching column for user input fragment."""
+    # remove "top", "where", extra words
+    text = text.replace("top", "").replace("where", "").strip()
+    return best_match(text, df.columns)
+
+
+# ===============================
+# 1. TOP N queries
+# "top 5 category", "top category", "top 10 items"
+# ===============================
+m = re.search(r"top\s*(\d*)\s*(.*)", query)
 if m and not query_successful:
-    n = int(m.group(1)) if m.group(1).isdigit() else 5
+    raw_n = m.group(1)
+    raw_col = m.group(2).strip()
 
-    # Try to guess column (category/product/item/name/type/group)
-    keywords = ["category", "product", "item", "type", "group", "name"]
-    target_col = None
+    n = int(raw_n) if raw_n.isdigit() else 5
 
-    for col in df.columns:
-        if any(k in col.lower() for k in keywords):
-            target_col = col
-            break
-
-    if target_col:
-        top_vals = df[target_col].value_counts().head(n)
-        st.write(f"Top {n} values in '{target_col}':")
-        st.dataframe(top_vals)
+    col = detect_column(raw_col)
+    if col:
+        result = df[col].value_counts().head(n)
+        st.success(f"Top **{n}** most frequent values in **{col}**")
+        st.dataframe(result)
         query_successful = True
 
 
-# --- CONDITIONAL FILTER ---
+# ===============================
+# 2. CONDITION queries
+# "age > 30", "salary <= 5000", "score = 10"
+# ===============================
 if not query_successful:
     cond = re.search(r"(.+?)\s*(==|>=|<=|>|<|=)\s*(.+)", query)
+
     if cond:
         col_raw = cond.group(1).strip()
-        op = cond.group(2)
+        op = cond.group(2).replace("=", "==")  # treat "=" as "=="
         val_raw = cond.group(3).strip()
 
-        col = best_match(col_raw, df.columns)
+        col = detect_column(col_raw)
+
         if col:
             # convert number if possible
-            try:
-                val = float(val_raw)
-            except:
-                val = val_raw  # keep as string
+            try: val = float(val_raw)
+            except: val = val_raw
 
             try:
+                # pandas query string
                 expr = f"`{col}` {op} @val"
                 result = df.query(expr)
-                st.write(f"Filtered rows: {col} {op} {val}")
+
+                st.success(f"Filtered rows where **{col} {op} {val}**")
                 st.dataframe(result)
                 query_successful = True
             except Exception as e:
-                st.error(f"Query error: {e}")
+                st.error(f"Error evaluating condition: {e}")
 
 
-# --- CONTAINS / TEXT SEARCH ---
-if "contain" in query or "contains" in query:
+# ===============================
+# 3. CONTAINS search
+# "name contains john", "email contain gmail"
+# ===============================
+if not query_successful:
     m = re.search(r"(.*)\s+contain[s]?\s+(.*)", query)
     if m:
         col_raw = m.group(1).strip()
-        text = m.group(2).strip().replace("'", "").replace('"', "")
+        text = m.group(2).strip().strip('"').strip("'")
 
-        col = best_match(col_raw, df.columns)
+        col = detect_column(col_raw)
+
         if col:
             result = df[df[col].astype(str).str.contains(text, case=False, na=False)]
-            st.write(f"Rows where {col} contains '{text}':")
+            st.success(f"Rows where **{col}** contains **'{text}'**")
             st.dataframe(result)
             query_successful = True
 
 
-# --- COLUMN SELECTION ---
-if any(x in query for x in ["show", "select"]) and "," in query:
-    cols = [c.strip() for c in re.split(",| ", query) if c.strip()]
-    matches = []
-    for c in cols:
-        col = best_match(c, df.columns)
-        if col: matches.append(col)
-    if matches:
-        st.write("Selected columns:")
-        st.dataframe(df[matches])
+# ===============================
+# 4. Select multiple columns
+# "show age, salary, city", "select name, email"
+# ===============================
+if not query_successful and any(k in query for k in ["show", "select"]):
+    parts = re.split(r",| and | ", query)
+    parts = [p.strip() for p in parts if p.strip()]
+
+    selected = []
+    for p in parts:
+        col = detect_column(p)
+        if col and col not in selected:
+            selected.append(col)
+
+    if len(selected) >= 2:
+        st.success("Showing selected columns:")
+        st.dataframe(df[selected])
         query_successful = True
 
 
+# ===============================
+# 5. If no match
+# ===============================
 if not query_successful:
-    st.error("Query not understood. Try: 'age > 30', 'top 5 categories', 'name contains john'")
+    st.error("❌ Query not understood. Try examples:\n- `age > 30`\n- `top 5 categories`\n- `name contains john`\n- `show age, salary`")
