@@ -129,23 +129,31 @@ def best_match(user_col, df_cols):
                 return c
     return None
 
-st.markdown("---")
-st.markdown("### 3. Ask a Question About the Data")
+if uploaded_file:
+    # ... file loading
+    # ... EDA
+    # ... visualization
 
-# randomize column name sugestion
-ran_col = np.random.choice(df.columns)
-st.info(f"Try queries like: 'top 5 {ran_col}', '{ran_col } > 50', '{ran_col} contains abc'")
-user_query = st.text_input(
-    "Type your query",placeholder="e.g., top 5 categories"
-)
+    st.markdown("---")
+    st.markdown("### 3. Ask a Question About the Data")
 
-if not user_query:
-    st.stop()
+    # randomize column name sugestion
+    ran_col = np.random.choice(df.columns)
+    st.info(f"Try queries like: 'top 5 {ran_col}', '{ran_col } > 50', '{ran_col} contains abc'")
 
-query = user_query.strip().lower()
-query_successful = False
+    user_query = st.text_input("Type your query", placeholder="e.g., top 5 categories")
 
+    if not user_query:
+        st.stop()
 
+    query = user_query.strip().lower()
+    query_successful = False
+
+    # --- TOP N ---
+    # your logic...
+
+else:
+    st.info("Please upload a CSV or Excel file to begin.")
 # ===============================
 # 0. Utility − detect column name
 # ===============================
@@ -250,3 +258,4 @@ if not query_successful and any(k in query for k in ["show", "select"]):
 # ===============================
 if not query_successful:
     st.error("❌ Query not understood. Try examples:\n- `age > 30`\n- `top 5 categories`\n- `name contains john`\n- `show age, salary`")
+
