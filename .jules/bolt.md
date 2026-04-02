@@ -1,3 +1,3 @@
-## 2024-05-01 - Streamlit Full-Script Execution and I/O Caching
-**Learning:** Streamlit reruns the entire script on every user interaction (e.g., sliding a slider, typing in an input box). By default, this means operations like `pd.read_csv(uploaded_file)` will re-read and re-parse the dataset every single time, leading to significant UI lag or freezing for large datasets.
-**Action:** Always wrap expensive data loading or I/O operations in a separate function decorated with `@st.cache_data`. This ensures that subsequent interactions retrieve the parsed `DataFrame` directly from memory, maintaining real-time responsiveness.
+## 2025-04-02 - Streamlit Rerun Optimization
+**Learning:** Streamlit reruns the entire script on every user interaction (e.g., clicking a button, changing a slider, uploading a file). If file parsing (like `pd.read_csv`) isn't cached, the app will waste time and memory repeatedly loading the exact same file from scratch.
+**Action:** Extract expensive operations like file loading into separate functions and decorate them with `@st.cache_data`. This caches the result based on the inputs (the uploaded file), so subsequent reruns bypass the expensive logic and fetch the dataframe instantly from memory.
