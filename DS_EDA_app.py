@@ -9,7 +9,7 @@ import difflib
 
 
 # Docstring for DS_EDA_app
-# a.) user can upload csv, excel 
+# a.) user can upload csv, excel
 # b.) basic eda --> show preview, info, describe, no. of missing values, no. of duplicate records
 # c.) ask user to select columns [multiselect]
 # d.) provide some diff diff graphs to the user
@@ -22,21 +22,26 @@ st.title("📊 Data Science EDA Application")
 st.markdown("---")
 st.write("Upload your dataset (CSV or Excel) and perform basic Exploratory Data Analysis (EDA) in real-time.")
 
+@st.cache_data
+def load_data(file):
+    """Caches the loaded dataset to prevent redundant parsing on every UI interaction."""
+    if file.name.endswith('.csv'):
+        return pd.read_csv(file)
+    else:
+        return pd.read_excel(file)
+
 uploaded_file = st.file_uploader("Upload your CSV or Excel file", type=["csv", "xlsx"])
 
 if uploaded_file:
     # Read the uploaded file
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        df = load_data(uploaded_file)
     except Exception as e:
         st.error(f"Error reading file: {e}")
         st.stop()
-        
+
     st.markdown("### 1. Basic Data Overview")
-    
+
     # Dataset Preview
     head = st.slider("Number of rows to view", min_value=5, max_value=20, value=5)
     st.subheader("Dataset Preview (First 5 Rows)")
@@ -55,7 +60,7 @@ if uploaded_file:
 
     # Missing Values and Duplicates
     col1, col2 = st.columns(2)
-    
+
     with col1:
         st.subheader("Missing Values")
         missing_values = df.isnull().sum()
@@ -77,27 +82,27 @@ if uploaded_file:
     st.markdown("---")
 
     st.markdown("### 2. Column Visualization")
-    
+
     # Column Selection for Visualization
     selected_columns = st.multiselect(
-        "Select one or more columns for visualization:", 
+        "Select one or more columns for visualization:",
         df.columns.tolist(),
         help="Select a column to see its distribution (Histogram for numeric, Count Plot for categorical)."
     )
 
     if selected_columns:
         st.markdown("#### Generated Plots (Seaborn + Matplotlib)")
-        
+
         # Determine the number of plots per row
-        cols_per_row = 2 
-        
+        cols_per_row = 2
+
         # Use st.columns to dynamically create plot layout
         plot_cols = st.columns(cols_per_row)
-        
+
         for i, col in enumerate(selected_columns):
             # Place the plot in the next column in the cycle
             with plot_cols[i % cols_per_row]:
-                
+
                 # Check for numeric types
                 if pd.api.types.is_numeric_dtype(df[col]):
                     fig, ax = plt.subplots(figsize=(7, 5))
@@ -106,12 +111,12 @@ if uploaded_file:
                     ax.set_xlabel(col)
                     st.pyplot(fig)
                     plt.close(fig) # Close figure to free memory
-                    
+
                 # Check for categorical/object types
                 elif pd.api.types.is_categorical_dtype(df[col]) or pd.api.types.is_object_dtype(df[col]):
                     # Limit to top 20 unique values for readability in count plots
                     value_counts = df[col].value_counts().head(20)
-                    
+
                     fig, ax = plt.subplots(figsize=(7, max(5, len(value_counts) * 0.4))) # Dynamic height
                     sns.barplot(x=value_counts.values, y=value_counts.index, ax=ax, palette='mako')
                     ax.set_title(f'Count Plot of {col} (Top {len(value_counts)})', fontsize=14)
@@ -258,4 +263,3 @@ if not query_successful and any(k in query for k in ["show", "select"]):
 # ===============================
 if not query_successful:
     st.error("❌ Query not understood. Try examples:\n- `age > 30`\n- `top 5 categories`\n- `name contains john`\n- `show age, salary`")
-
