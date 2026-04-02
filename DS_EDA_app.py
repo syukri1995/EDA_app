@@ -24,13 +24,23 @@ st.write("Upload your dataset (CSV or Excel) and perform basic Exploratory Data 
 
 uploaded_file = st.file_uploader("Upload your CSV or Excel file", type=["csv", "xlsx"])
 
+@st.cache_data
+def load_data(file_bytes, file_name):
+    """
+    Load data from uploaded file and cache the result.
+    This prevents re-reading and re-parsing the entire dataset on every Streamlit rerun.
+    """
+    if file_name.endswith('.csv'):
+        return pd.read_csv(io.BytesIO(file_bytes))
+    else:
+        return pd.read_excel(io.BytesIO(file_bytes))
+
 if uploaded_file:
     # Read the uploaded file
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        # Cache the loaded dataframe using file bytes
+        file_bytes = uploaded_file.getvalue()
+        df = load_data(file_bytes, uploaded_file.name)
     except Exception as e:
         st.error(f"Error reading file: {e}")
         st.stop()
@@ -154,6 +164,8 @@ if uploaded_file:
 
 else:
     st.info("Please upload a CSV or Excel file to begin.")
+    st.stop()
+
 # ===============================
 # 0. Utility − detect column name
 # ===============================
