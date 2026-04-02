@@ -10,6 +10,15 @@ import difflib
 
 # Docstring for DS_EDA_app
 # a.) user can upload csv, excel 
+
+@st.cache_data(show_spinner="Loading data...")
+def load_data(uploaded_file):
+    """Loads CSV or Excel data and caches it for performance."""
+    if uploaded_file.name.endswith('.csv'):
+        return pd.read_csv(uploaded_file)
+    else:
+        return pd.read_excel(uploaded_file)
+
 # b.) basic eda --> show preview, info, describe, no. of missing values, no. of duplicate records
 # c.) ask user to select columns [multiselect]
 # d.) provide some diff diff graphs to the user
@@ -27,10 +36,7 @@ uploaded_file = st.file_uploader("Upload your CSV or Excel file", type=["csv", "
 if uploaded_file:
     # Read the uploaded file
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        df = load_data(uploaded_file)
     except Exception as e:
         st.error(f"Error reading file: {e}")
         st.stop()
