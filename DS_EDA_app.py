@@ -164,7 +164,9 @@ if uploaded_file:
 
 else:
     st.info("Please upload a CSV or Excel file to begin.")
-    st.stop()
+    # Initialize query variables so the regex logic below doesn't throw NameError
+    query = ""
+    query_successful = False
 
 # ===============================
 # 0. Utility − detect column name
