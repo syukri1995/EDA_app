@@ -24,13 +24,18 @@ st.write("Upload your dataset (CSV or Excel) and perform basic Exploratory Data 
 
 uploaded_file = st.file_uploader("Upload your CSV or Excel file", type=["csv", "xlsx"])
 
+# Cache data loading to prevent re-parsing on every UI interaction
+@st.cache_data
+def load_data(file_obj, is_csv):
+    if is_csv:
+        return pd.read_csv(file_obj)
+    return pd.read_excel(file_obj)
+
 if uploaded_file:
-    # Read the uploaded file
+    # Read the uploaded file using the cached function
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        is_csv = uploaded_file.name.endswith('.csv')
+        df = load_data(uploaded_file, is_csv)
     except Exception as e:
         st.error(f"Error reading file: {e}")
         st.stop()
