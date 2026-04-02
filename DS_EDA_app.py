@@ -24,13 +24,23 @@ st.write("Upload your dataset (CSV or Excel) and perform basic Exploratory Data 
 
 uploaded_file = st.file_uploader("Upload your CSV or Excel file", type=["csv", "xlsx"])
 
+@st.cache_data
+def load_data(file):
+    """Loads and caches data to avoid reparsing on every Streamlit rerun."""
+    # We must reset the file pointer to the beginning before reading,
+    # and Streamlit hashes the file correctly if we just pass the file directly in most cases.
+    # However, st.file_uploader returns an UploadedFile object which is usually hashed.
+    # If there's an issue with Streamlit hashing UploadedFile we might need to use _file,
+    # but Streamlit explicitly supports caching UploadedFile since 1.23.0+.
+    if file.name.endswith('.csv'):
+        return pd.read_csv(file)
+    else:
+        return pd.read_excel(file)
+
 if uploaded_file:
     # Read the uploaded file
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        df = load_data(uploaded_file)
     except Exception as e:
         st.error(f"Error reading file: {e}")
         st.stop()
@@ -154,6 +164,8 @@ if uploaded_file:
 
 else:
     st.info("Please upload a CSV or Excel file to begin.")
+    st.stop()
+
 # ===============================
 # 0. Utility − detect column name
 # ===============================
