@@ -45,6 +45,17 @@ def load_data(file):
     else:
         return pd.read_excel(file)
 
+@st.cache_data
+def compute_eda_stats(data):
+    """⚡ Bolt: Caches expensive EDA computations to avoid recalculating on every Streamlit rerun."""
+    buffer = io.StringIO()
+    data.info(buf=buffer)
+    info_text = buffer.getvalue()
+    describe_df = data.describe()
+    missing_values = data.isnull().sum()
+    duplicate_count = data.duplicated().sum()
+    return info_text, describe_df, missing_values, duplicate_count
+
 if uploaded_file:
     # Read the uploaded file
     try:
@@ -52,6 +63,8 @@ if uploaded_file:
     except Exception as e:
         st.error(f"Error reading file: {e}")
         st.stop()
+
+    info_text, describe_df, missing_values, duplicate_count = compute_eda_stats(df)
 
     st.markdown("### 1. Basic Data Overview")
 
@@ -62,21 +75,17 @@ if uploaded_file:
 
     # Dataset Information
     st.subheader("Dataset Information (`df.info()`)")
-    # Capture the output of df.info()
-    buffer = io.StringIO()
-    df.info(buf=buffer)
-    st.text(buffer.getvalue())
+    st.text(info_text)
 
     # Statistical Summary
     st.subheader("Statistical Summary (`df.describe()`)")
-    st.dataframe(df.describe().style.format(precision=2))
+    st.dataframe(describe_df.style.format(precision=2))
 
     # Missing Values and Duplicates
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Missing Values")
-        missing_values = df.isnull().sum()
         # Filter to show only columns with missing values
         missing_df = missing_values[missing_values > 0].reset_index()
         missing_df.columns = ['Feature', 'Missing Count']
@@ -87,7 +96,6 @@ if uploaded_file:
 
     with col2:
         st.subheader("Duplicate Records")
-        duplicate_count = df.duplicated().sum()
         st.info(f"Total number of duplicate records: **{duplicate_count}**")
         if duplicate_count > 0:
             st.warning("Consider removing duplicates to ensure data quality.")
