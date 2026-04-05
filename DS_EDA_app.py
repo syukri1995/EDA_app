@@ -111,6 +111,28 @@ if uploaded_file:
         help="Select a column to see its distribution (Histogram for numeric, Count Plot for categorical)."
     )
 
+    @st.cache_data
+    def render_numeric_plot(series, col_name):
+        """⚡ Bolt: Cache expensive KDE plot rendering to prevent main-thread blocking during unrelated UI reruns."""
+        fig, ax = plt.subplots(figsize=(7, 5))
+        sns.histplot(series.dropna(), kde=True, ax=ax, palette='viridis')
+        ax.set_title(f'Distribution (Histogram/KDE) of {col_name}', fontsize=14)
+        ax.set_xlabel(col_name)
+        st.pyplot(fig)
+        plt.close(fig) # Close figure to free memory
+
+    @st.cache_data
+    def render_categorical_plot(series, col_name):
+        """⚡ Bolt: Cache expensive categorical plot rendering to prevent main-thread blocking during unrelated UI reruns."""
+        value_counts = series.value_counts().head(20)
+        fig, ax = plt.subplots(figsize=(7, max(5, len(value_counts) * 0.4))) # Dynamic height
+        sns.barplot(x=value_counts.values, y=value_counts.index, ax=ax, palette='mako')
+        ax.set_title(f'Count Plot of {col_name} (Top {len(value_counts)})', fontsize=14)
+        ax.set_xlabel('Count')
+        ax.set_ylabel(col_name)
+        st.pyplot(fig)
+        plt.close(fig) # Close figure to free memory
+
     if selected_columns:
         st.markdown("#### Generated Plots (Seaborn + Matplotlib)")
 
@@ -126,25 +148,11 @@ if uploaded_file:
 
                 # Check for numeric types
                 if pd.api.types.is_numeric_dtype(df[col]):
-                    fig, ax = plt.subplots(figsize=(7, 5))
-                    sns.histplot(df[col].dropna(), kde=True, ax=ax, palette='viridis')
-                    ax.set_title(f'Distribution (Histogram/KDE) of {col}', fontsize=14)
-                    ax.set_xlabel(col)
-                    st.pyplot(fig)
-                    plt.close(fig) # Close figure to free memory
+                    render_numeric_plot(df[col], col)
 
                 # Check for categorical/object types
                 elif pd.api.types.is_categorical_dtype(df[col]) or pd.api.types.is_object_dtype(df[col]):
-                    # Limit to top 20 unique values for readability in count plots
-                    value_counts = df[col].value_counts().head(20)
-
-                    fig, ax = plt.subplots(figsize=(7, max(5, len(value_counts) * 0.4))) # Dynamic height
-                    sns.barplot(x=value_counts.values, y=value_counts.index, ax=ax, palette='mako')
-                    ax.set_title(f'Count Plot of {col} (Top {len(value_counts)})', fontsize=14)
-                    ax.set_xlabel('Count')
-                    ax.set_ylabel(col)
-                    st.pyplot(fig)
-                    plt.close(fig) # Close figure to free memory
+                    render_categorical_plot(df[col], col)
 
 def best_match(user_col, df_cols):
     """Return closest column using fuzzy matching."""
