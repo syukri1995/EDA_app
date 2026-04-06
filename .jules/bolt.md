@@ -5,3 +5,7 @@
 ## 2025-04-03 - Caching Computations Beyond I/O in Streamlit
 **Learning:** Beyond caching I/O (like file loading), expensive dataframe computations (`df.describe()`, `df.info()`, `df.duplicated().sum()`) will severely degrade performance in Streamlit because they block the main thread on every rerun (e.g. when typing in a text field or adjusting a slider). Caching computations, not just data loading, is essential for UI responsiveness.
 **Action:** Extract expensive EDA Pandas computations into a single helper function and decorate it with `@st.cache_data` so that it computes only once per dataset and immediately returns the cached metrics during interactive element state changes.
+
+## 2024-05-15 - Streamlit Caching Gotchas
+**Learning:** Functions decorated with `@st.cache_data` in Streamlit must be defined at the module's global scope, not nested inside `if` statements or other conditional blocks. Defining them inside blocks causes Streamlit to recreate the function object on every rerun, which breaks the cache and can cause warnings or invalidation. Also, using `@st.cache_data` caches not just data returns, but also UI side effects like `st.pyplot()`, which is a powerful way to skip rendering expensive Matplotlib charts on every widget interaction.
+**Action:** Always place `@st.cache_data` decorated helper functions at the top level of Streamlit scripts, outside of execution flows. Wrap Matplotlib chart generation in these globally-defined cached functions.
