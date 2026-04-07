@@ -146,8 +146,9 @@ if uploaded_file:
                     st.pyplot(fig)
                     plt.close(fig) # Close figure to free memory
 
+@st.cache_data
 def best_match(user_col, df_cols):
-    """Return closest column using fuzzy matching."""
+    """⚡ Bolt: Cache fuzzy column matching to prevent redundant O(N) lowercase conversions and matching on every text input keystroke."""
     match = difflib.get_close_matches(user_col.lower(), [c.lower() for c in df_cols], n=1, cutoff=0.4)
     if match:
         for c in df_cols:
@@ -191,7 +192,7 @@ def detect_column(text):
     """Find best matching column for user input fragment."""
     # remove "top", "where", extra words
     text = text.replace("top", "").replace("where", "").strip()
-    return best_match(text, df.columns)
+    return best_match(text, tuple(df.columns))
 
 
 # ===============================
