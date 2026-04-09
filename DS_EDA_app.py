@@ -22,14 +22,6 @@ st.title("📊 Data Science EDA Application")
 st.markdown("---")
 st.write("Upload your dataset (CSV or Excel) and perform basic Exploratory Data Analysis (EDA) in real-time.")
 
-@st.cache_data
-def load_data(file):
-    """Caches the loaded dataset to prevent redundant parsing on every UI interaction."""
-    if file.name.endswith('.csv'):
-        return pd.read_csv(file)
-    else:
-        return pd.read_excel(file)
-
 uploaded_file = st.file_uploader("Upload your CSV or Excel file", type=["csv", "xlsx"])
 
 @st.cache_data
@@ -41,7 +33,8 @@ def load_data(file):
     # If there's an issue with Streamlit hashing UploadedFile we might need to use _file,
     # but Streamlit explicitly supports caching UploadedFile since 1.23.0+.
     if file.name.endswith('.csv'):
-        return pd.read_csv(file)
+        # ⚡ Bolt: Use PyArrow engine for faster CSV parsing
+        return pd.read_csv(file, engine='pyarrow')
     else:
         return pd.read_excel(file)
 
