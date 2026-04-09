@@ -5,3 +5,6 @@
 ## 2025-04-03 - Caching Computations Beyond I/O in Streamlit
 **Learning:** Beyond caching I/O (like file loading), expensive dataframe computations (`df.describe()`, `df.info()`, `df.duplicated().sum()`) will severely degrade performance in Streamlit because they block the main thread on every rerun (e.g. when typing in a text field or adjusting a slider). Caching computations, not just data loading, is essential for UI responsiveness.
 **Action:** Extract expensive EDA Pandas computations into a single helper function and decorate it with `@st.cache_data` so that it computes only once per dataset and immediately returns the cached metrics during interactive element state changes.
+## 2026-04-09 - Faster CSV Parsing
+**Learning:** The default Pandas `read_csv` engine is built in C but executes linearly. By contrast, the `pyarrow` engine is multi-threaded and significantly faster for reading large CSVs.
+**Action:** Use `engine='pyarrow'` in `pd.read_csv()` to accelerate data loading, especially since PyArrow is already a built-in dependency of Streamlit.
