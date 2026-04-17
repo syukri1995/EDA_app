@@ -9,3 +9,7 @@
 ## 2024-05-18 - PyArrow CSV Engine Optimization
 **Learning:** Pandas `read_csv` can be significantly sped up by using `engine='pyarrow'` which provides a multi-threaded C++ backend. This is especially useful for large files and since PyArrow is already a Streamlit dependency, it can be used safely without adding new external requirements.
 **Action:** Use `engine='pyarrow'` in `pd.read_csv()` calls when performance is critical and PyArrow is available.
+
+## 2024-05-20 - Kernel Density Estimation (KDE) Performance on Large Datasets
+**Learning:** Seaborn's Kernel Density Estimation (e.g., `sns.histplot` with `kde=True`) is computationally extremely expensive for large datasets. Because Streamlit runs synchronously on the main thread, attempting to compute and plot KDE for columns with hundreds of thousands of rows causes severe UI freezing and unresponsiveness.
+**Action:** Dynamically disable KDE (e.g., `kde=(len(df) <= 50000)`) for visualizations involving large datasets to maintain UI responsiveness without sacrificing the core functionality of displaying data distributions.
