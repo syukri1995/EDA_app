@@ -120,8 +120,16 @@ if uploaded_file:
                 # Check for numeric types
                 if pd.api.types.is_numeric_dtype(df[col]):
                     fig, ax = plt.subplots(figsize=(7, 5))
-                    sns.histplot(df[col].dropna(), kde=True, ax=ax, palette='viridis')
-                    ax.set_title(f'Distribution (Histogram/KDE) of {col}', fontsize=14)
+
+                    # ⚡ Bolt: Dynamically disable expensive KDE calculation for large datasets (>50k rows)
+                    # Seaborn's KDE computation is computationally intensive and blocks Streamlit's main thread,
+                    # leading to UI freezing for large datasets.
+                    valid_data = df[col].dropna()
+                    use_kde = len(valid_data) <= 50000
+
+                    sns.histplot(valid_data, kde=use_kde, ax=ax, palette='viridis')
+                    title_suffix = ' (with KDE)' if use_kde else ''
+                    ax.set_title(f'Distribution{title_suffix} of {col}', fontsize=14)
                     ax.set_xlabel(col)
                     st.pyplot(fig)
                     plt.close(fig) # Close figure to free memory
