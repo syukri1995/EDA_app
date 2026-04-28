@@ -119,9 +119,13 @@ if uploaded_file:
 
                 # Check for numeric types
                 if pd.api.types.is_numeric_dtype(df[col]):
+                    # ⚡ Bolt: Disable computationally expensive KDE for large datasets
+                    # to prevent main thread blocking and UI freezing.
+                    use_kde = len(df) <= 50000
                     fig, ax = plt.subplots(figsize=(7, 5))
-                    sns.histplot(df[col].dropna(), kde=True, ax=ax, palette='viridis')
-                    ax.set_title(f'Distribution (Histogram/KDE) of {col}', fontsize=14)
+                    sns.histplot(df[col].dropna(), kde=use_kde, ax=ax, palette='viridis')
+                    title_suffix = '/KDE' if use_kde else ''
+                    ax.set_title(f'Distribution (Histogram{title_suffix}) of {col}', fontsize=14)
                     ax.set_xlabel(col)
                     st.pyplot(fig)
                     plt.close(fig) # Close figure to free memory
